@@ -1,25 +1,180 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: Hans U Deck
+date: "9 6 2021"
 output: 
   html_document:
-    keep_md: true
+   keep_md: true
+
 ---
 
 
-## Loading and preprocessing the data
+#### **Loading and preprocessing the data**
+```{r Loading and preprocessing data}
+library(ggplot2)
+data <- read.csv("repdata_data_activity/activity.csv")
+head(data)
+str(data)
+summary(data)
+
+sum <- aggregate(data$steps, by = list(date = data$date), FUN = sum, ia.rm = TRUE)
+sum$date <- as.Date(sum$date)
+head(sum)
+str(sum)
+summary(sum)
+  
+```
+
+The dataframe (sum) includes the the total steps each day.
+
+#### **What is mean total number of steps taken per day?**
+```{r steps per day}
+steps <- sum$x
+h <- hist(
+        steps,
+        main = "Histogram  Steps per Day",
+        breaks = 60,
+        xlim = c(0, 25000),
+        xlab = "Total Steps / Day"
+)
+
+text(
+        h$mids,
+        h$counts,
+        labels = h$counts,
+        adj = c(0.5,-0.5),
+        cex = 0.7
+)
+
+```
 
 
 
-## What is mean total number of steps taken per day?
+Calculation the **mean** value:
+
+```{r}
+mean <- round(mean(sum$x, na.rm = TRUE), digits = 0)
+mean
+```
+
+**The mean value is `r format(mean, digits=8)`**
+`
+
+Calculation the **median** value:
+
+```{r}
+median <- (median(sum$x, na.rm = TRUE))
+median
+```
+
+**The mean value is `r format(median, digits=8)`**
 
 
 
-## What is the average daily activity pattern?
+#### **What is the average daily activity pattern?**
+
+```{r}
+mean <- aggregate(data$steps, by = list(date = data$date), FUN = mean, na.rm = TRUE)
+mean$x <- round(mean$x, digits = 2)
+mean$date <- as.Date(mean$date)
+p <- ggplot(mean, (aes(date, x))) +
+        geom_line() +
+        labs(x = "Date", y = " Average Steps per day", title = "Time Serines average number of steps per day") +
+        theme_light()
+
+p
+
+```
 
 
 
-## Imputing missing values
+#### **Imputing missing values**
+
+```{r}
+CountNA <- sum(is.na(data$steps))
+CountNA
+```
+
+The Total numbers of rows with NA is  `r CountNA`
+
+```{r}
+data1 <- data
+data1$steps[is.na(data1$steps)] <- mean(data1$steps, na.rm = TRUE)
+head(data1)
+summary(data1)
+```
+
+Filling the missing values with mean function
+
+```{r}
+
+sum1 <- aggregate(data1$steps, by = list(date = data1$date), FUN = sum, ia.rm = TRUE)
+sum1$date <- as.Date(sum1$date)
+head(sum1)
+str(sum1)
+summary(sum1)
+
+steps <- sum1$x
+h <- hist(
+        steps,
+        main = "Histogram  Steps per Day",
+        breaks = 60,
+        xlim = c(0, 25000),
+        xlab = "Total Steps / Day"
+)
+
+text(
+        h$mids,
+        h$counts,
+        labels = h$counts,
+        adj = c(0.5,-0.5),
+        cex = 0.7
+)
+```
+
+```{r}
+meanValue <- round(mean(sum1$x), digits = 0)
+meanValue
+medianValue <- round(median(sum1$x), digits = 0)
+medianValue
+```
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+
+
+`**The mean Value is `r format(meanValue, digits = 8) ` and the median Value is `r format(medianValue, digit = 8)` **
+
+
+
+
+
+#### **Are there differences in activity patterns between weekdays and weekends?**
+
+```{r}
+library(timeDate)
+
+sumtest <- sum1
+sumtest$days <- isWeekday(sumtest$date)
+
+weekday <- subset(sumtest, sumtest$days == TRUE)
+weekday$days <- "Weekday"
+
+weekend <- subset(sumtest, sumtest$days == FALSE)
+weekend$days <- "Weekend"
+
+week <- rbind(weekday, weekend)
+
+week <- week[order(week$date),]
+week$date <- as.Date(week$date)
+
+p <- ggplot(week, aes(date, x, color = days)) +
+        geom_line() +
+        labs(x = "Date", y = " Average Steps per day", title = "Time Serines average number of steps per day") +
+        facet_wrap( ~ days, ncol = 1) +
+        theme_light()
+p
+
+
+```
+
